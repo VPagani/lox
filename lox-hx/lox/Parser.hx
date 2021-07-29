@@ -53,7 +53,7 @@ class Parser {
      * varDeclaration → _IDENTIFIER_ ( `=` __expression__ )? `;`
      */
     private function varDeclaration():Statement {
-        var name = consume(IDENTIFIER, "Expect variable name");
+        var name = consume(IDENTIFIER, "Expected variable name");
 
         var initializer = null;
         if (match(EQUAL)) {
@@ -65,18 +65,21 @@ class Parser {
     }
 
     /**
-     * __statement__ → __printStatement__
+     * __statement__ → `print` __printStatement__
      * 
      * __statement__ → __expressionStatement__
+     * 
+     * __statement__ → `{` __block__
      */
     private function statement():Statement {
         if (match(PRINT)) return printStatement();
+        if (match(LEFT_BRACE)) return Block(block());
 
         return expressionStatement();
     }
 
     /**
-     * __printStatement__ → `print` __expression__ `;`
+     * __printStatement__ → __expression__ `;`
      */
     private function printStatement():Statement {
         var value = expression();
@@ -91,6 +94,23 @@ class Parser {
         var expr = expression();
         consume(SEMICOLON, "Expected ';' after expression");
         return Expr(expr);
+    }
+
+    /**
+     * __block__ -> __declaration__* `}`
+     */
+    private function block():Array<Statement> {
+        var statements:Array<Statement> = [];
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            var statement = declaration();
+            if (statement != null)
+                statements.push(statement);
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' to close the block");
+
+        return statements;
     }
 
     // Chapter 6 Chalenge 1 (Comma Operator)
@@ -337,7 +357,7 @@ class Parser {
 
     private function error(token: Token, message:String) {
         Lox.errorToken(token, message);
-        return new ParseError();
+        return new ParseError(message);
     }
 
     private function synchronize() {
@@ -356,6 +376,4 @@ class Parser {
     }
 }
 
-class ParseError {
-    public function new() {}
-}
+class ParseError extends haxe.Exception {}

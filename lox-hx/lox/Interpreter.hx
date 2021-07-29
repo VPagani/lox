@@ -26,6 +26,9 @@ class Interpreter {
                 var value = evaluate(expression);
                 Sys.println(stringify(value));
 
+            case Block(statements):
+                executeBlock(statements, new Environment(environment));
+
             case VarDecl(name, initializer):
                 var value = null;
 
@@ -35,6 +38,23 @@ class Interpreter {
 
                 environment.define(name, value);
         }
+    }
+
+    private function executeBlock(stmts:Array<Statement>, environment:Environment) {
+        var previous = this.environment;
+
+        try {
+            this.environment = environment;
+
+            for (stmt in stmts) {
+                execute(stmt);
+            }
+        } catch (error) {
+            this.environment = previous;
+            throw error;
+        }
+        
+        this.environment = previous;
     }
 
     private function evaluate(expr:Expression):Dynamic {
@@ -167,7 +187,7 @@ class Interpreter {
     }
 }
 
-class RuntimeError extends Error {
+class RuntimeError extends haxe.Exception {
     public final token:Token;
 
     public function new(token:Token, message:String) {
