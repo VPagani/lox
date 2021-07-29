@@ -1,6 +1,9 @@
 import sys.io.File;
 
 import lox.Scanner;
+import lox.Parser;
+
+using lox.Expression.AstPrinter;
 
 class Lox {
     static var hadError:Bool = false;
@@ -38,9 +41,12 @@ class Lox {
     private static function run(source:String) {
         var scanner = new Scanner(source);
         var tokens = scanner.scanTokens();
+        var parser = new Parser(tokens);
+        var expression = parser.parse();
+    
+        if (hadError) return;
 
-        for (token in tokens)
-            Sys.println(token);
+        Sys.println(expression.print());
     }
 
     public static function error(line:Int, message:String) {
@@ -50,5 +56,13 @@ class Lox {
     public static function report(line:Int, where:String, message:String) {
         Sys.println('[line $line] Error $where: $message');
         hadError = true;
+    }
+
+    public static function errorToken(token:lox.Token, message:String) {
+        if (token.type == lox.TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, ' at \'${token.lexeme}\'', message);
+        }
     }
 }
