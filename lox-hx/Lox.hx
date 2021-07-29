@@ -2,11 +2,15 @@ import sys.io.File;
 
 import lox.Scanner;
 import lox.Parser;
+import lox.Interpreter;
 
 using lox.Expression.AstPrinter;
 
 class Lox {
+    static final interpreter:Interpreter = new Interpreter();
+
     static var hadError:Bool = false;
+    static var hadRuntimeError:Bool = false;
 
     public static function main():Void {
         var args = Sys.args();
@@ -25,6 +29,7 @@ class Lox {
         var content = File.getContent(path);
         run(content);
         if (hadError) Sys.exit(65);
+        if (hadRuntimeError) Sys.exit(70);
     }
 
     private static function runPrompt() {
@@ -46,16 +51,16 @@ class Lox {
     
         if (hadError) return;
 
-        Sys.println(expression.print());
-    }
-
-    public static function error(line:Int, message:String) {
-        report(line, "", message);
+        interpreter.interpret(expression);
     }
 
     public static function report(line:Int, where:String, message:String) {
         Sys.println('[line $line] Error $where: $message');
         hadError = true;
+    }
+
+    public static function error(line:Int, message:String) {
+        report(line, "", message);
     }
 
     public static function errorToken(token:lox.Token, message:String) {
@@ -64,5 +69,10 @@ class Lox {
         } else {
             report(token.line, ' at \'${token.lexeme}\'', message);
         }
+    }
+
+    public static function runtimeError(error:lox.Interpreter.RuntimeError) {
+        Sys.println('[line ${error.token.line}] ${error.message}');
+        hadRuntimeError = true;
     }
 }
