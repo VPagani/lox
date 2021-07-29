@@ -17,6 +17,16 @@ class Interpreter {
         }
     }
 
+    // Chapter 8 Challenge 1
+    public function interpretExpression(expression:Expression) {
+        try {
+            var value = evaluate(expression);
+            Sys.println(stringify(value));
+        } catch (error:RuntimeError) {
+            Lox.runtimeError(error);
+        }
+    }
+
     private function execute(stmt:Statement):Void {
         switch (stmt) {
             case Expr(expression):

@@ -16,6 +16,11 @@ class Parser {
         return program();
     }
 
+    // Chapter 8 Challenge 1
+    public function parseExpression() {
+        return expression();
+    }
+
     /**
      * __program__ → __declaration__* EOF
      */
@@ -44,7 +49,7 @@ class Parser {
 
             return statement();
         } catch (error:ParseError) {
-            // synchronize();
+            synchronize();
             return null;
         }
     }

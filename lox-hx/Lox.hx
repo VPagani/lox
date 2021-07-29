@@ -4,7 +4,7 @@ import lox.Scanner;
 import lox.Parser;
 import lox.Interpreter;
 
-using lox.Expression.AstPrinter;
+using StringTools;
 
 class Lox {
     static final interpreter:Interpreter = new Interpreter();
@@ -38,7 +38,13 @@ class Lox {
         try while (true) {
             Sys.print("> ");
             var line = stdin.readLine();
-            run(line);
+
+            if (!line.endsWith(";") && !line.endsWith("}")) {
+                runExpression(line);
+            } else {
+                run(line);
+            }
+
             hadError = false;
         } catch (e:haxe.io.Eof) {}
     }
@@ -48,10 +54,25 @@ class Lox {
         var tokens = scanner.scanTokens();
         var parser = new Parser(tokens);
         var program = parser.parse();
-    
+
         if (hadError) return;
 
         interpreter.interpret(program);
+    }
+
+    // Chapter 8 Challenge 1
+    private static function runExpression(source:String) {
+        var scanner = new Scanner(source);
+        var tokens = scanner.scanTokens();
+        var parser = new Parser(tokens);
+
+        try {
+            var expression = parser.parseExpression();
+
+            if (hadError) return;
+            
+            interpreter.interpretExpression(expression);
+        } catch (e:ParseError) {}
     }
 
     public static function report(line:Int, where:String, message:String) {
@@ -65,9 +86,9 @@ class Lox {
 
     public static function errorToken(token:lox.Token, message:String) {
         if (token.type == lox.TokenType.EOF) {
-            report(token.line, " at end", message);
+            report(token.line, "at end", message);
         } else {
-            report(token.line, ' at \'${token.lexeme}\'', message);
+            report(token.line, 'at \'${token.lexeme}\'', message);
         }
     }
 
