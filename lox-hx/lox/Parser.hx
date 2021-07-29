@@ -19,11 +19,20 @@ class Parser {
         }
     }
 
+    // Chapter 6 Chalenge 1 (Comma Operator)
     /**
-     * __expression__ → __equality__
+     * __expression__ → __equality__ ( `,` __equality__ )*
      */
-    private function expression():Expression {
-        return equality();
+     private function expression():Expression {
+        var expr = equality();
+
+        while(match(COMMA)) {
+            var op = previous();
+            var right = equality();
+            expr = Binary(expr, op, right);
+        }
+
+        return expr;
     }
 
     /**
