@@ -1,0 +1,12 @@
+--class-path src/lox-hx
+--main Lox
+--dce full
+-D analyzer-optimize
+
+--each
+
+--neko bin/lox.n
+
+--next
+
+--hl bin/lox.hl
