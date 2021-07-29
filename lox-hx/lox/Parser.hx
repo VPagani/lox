@@ -21,18 +21,38 @@ class Parser {
 
     // Chapter 6 Chalenge 1 (Comma Operator)
     /**
-     * __expression__ → __equality__ ( `,` __equality__ )*
+     * __expression__ → __ternary__ ( `,` __ternary__ )*
      */
      private function expression():Expression {
-        var expr = equality();
+        var expr = ternary();
 
         while(match(COMMA)) {
             var op = previous();
-            var right = equality();
+            var right = ternary();
             expr = Binary(expr, op, right);
         }
 
         return expr;
+    }
+
+    // Chapter 6 Chalenge 2 (Conditional Operator)
+    /**
+     * 
+     * __ternary__ -> (__equality__  `?` __equality__ `:`)* __ternary__
+     */
+    private function ternary():Expression {
+        var first = equality();
+
+        if (!match(QUESTION)) return first;
+
+        var op1 = previous();
+        var second = equality();
+
+        if (!match(COLON))
+            throw error(peek(), "Expected ':' after expression");
+
+        var op2 = previous();
+        return Ternary(first, op1, second, op2, ternary());
     }
 
     /**
