@@ -76,6 +76,9 @@ class Interpreter {
 
                     // factor
                     case SLASH:
+                        if (right == 0)
+                            throw new RuntimeError(op, 'Cannot divide by 0');
+
                         checkNumberOperands(op, left, right);
                         return left / right;
                     case STAR:
