@@ -67,11 +67,12 @@ class Interpreter {
                             return left + right;
                         }
 
-                        if (Std.isOfType(left, String) && Std.isOfType(right, String)) {
-                            return '$left$right';
+                        // Chapter 7 Challenge 2
+                        if (Std.isOfType(left, String) || Std.isOfType(right, String)) {
+                            return '${Std.string(left)}${Std.string(right)}';
                         }
 
-                        throw new RuntimeError(op, 'Operands must be two numbers or two strings');
+                        throw new RuntimeError(op, 'Operands must be two numbers or one string');
 
                     // factor
                     case SLASH:
