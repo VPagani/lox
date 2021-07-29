@@ -3,6 +3,8 @@ package lox;
 using StringTools;
 
 class Interpreter {
+    private var environment = new Environment();
+
     public function new() {}
 
     public function interpret(statements:Array<Statement>) {
@@ -23,6 +25,15 @@ class Interpreter {
             case Print(expression):
                 var value = evaluate(expression);
                 Sys.println(stringify(value));
+
+            case VarDecl(name, initializer):
+                var value = null;
+
+                if (initializer != null) {
+                    value = evaluate(initializer);
+                }
+
+                environment.define(name, value);
         }
     }
 
@@ -109,6 +120,13 @@ class Interpreter {
                 }
 
             case Grouping(expression): evaluate(expression);
+
+            case Variable(name): environment.get(name);
+
+            case Assignment(name, value):
+                var value = evaluate(value);
+                environment.assign(name, value);
+                return value;
         }
     }
 

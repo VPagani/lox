@@ -17,17 +17,51 @@ class Parser {
     }
 
     /**
-     * __program__ → __statement__* EOF
+     * __program__ → __declaration__* EOF
      */
-    private function program() {
+    private function program():Array<Statement> {
         var statements:Array<Statement> = [];
 
         while (!isAtEnd()) {
-            statements.push(statement());
+            var statement = declaration();
+            if (statement != null) {
+                statements.push(statement);
+            }
         }
 
         return statements;
 
+    }
+
+    /**
+     * __declaration__ → `var` __varDeclaration__
+     * 
+     * __declaration__ → __statement__
+     */
+    private function declaration():Null<Statement> {
+        try {
+            if (match(VAR)) return varDeclaration();
+
+            return statement();
+        } catch (error:ParseError) {
+            // synchronize();
+            return null;
+        }
+    }
+
+    /**
+     * varDeclaration → _IDENTIFIER_ ( `=` __expression__ )? `;`
+     */
+    private function varDeclaration():Statement {
+        var name = consume(IDENTIFIER, "Expect variable name");
+
+        var initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expected ';' after variable declaration");
+        return VarDecl(name, initializer);
     }
 
     /**
@@ -61,15 +95,39 @@ class Parser {
 
     // Chapter 6 Chalenge 1 (Comma Operator)
     /**
-     * __expression__ → __ternary__ ( `,` __ternary__ )*
+     * __expression__ → __assignment__ ( `,` __assignment__ )*
      */
      private function expression():Expression {
-        var expr = ternary();
+        var expr = assignment();
 
         while(match(COMMA)) {
             var op = previous();
-            var right = ternary();
+            var right = assignment();
             expr = Binary(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    /**
+     * __assignment__ → __ternary__
+     * 
+     * __assignment__ → _IDENTIFIER_ `=` __assignment__
+     */
+    private function assignment():Expression {
+        var expr = ternary();
+
+        if (match(EQUAL)) {
+            var equals = previous();
+            var value = assignment();
+
+            switch (expr) {
+                case Variable(name):
+                    return Assignment(name, value);
+                
+                case _:
+                    error(equals, "Invalid assignment target");
+            }
         }
 
         return expr;
@@ -208,11 +266,13 @@ class Parser {
      * 
      * __primary__ → _STRING_
      * 
+     * __primary__ → _IDENTIFIER_
+     * 
      * __primary__ → `true` | `false`
      * 
-     * __primary__ -> `nil`
+     * __primary__ → `nil`
      * 
-     * __primary__ -> `(` __expression__ `)`
+     * __primary__ → `(` __expression__ `)`
      */
      private function primary():Expression {
         if (match(FALSE)) return Literal(false);
@@ -221,6 +281,10 @@ class Parser {
 
         if (match(NUMBER, STRING)) {
             return Literal(previous().literal);
+        }
+
+        if (match(IDENTIFIER)) {
+            return Variable(previous());
         }
 
         if (match(LEFT_PAREN)) {

@@ -6,6 +6,8 @@ enum Expression {
     Binary(left:Expression, op:Token, right:Expression);
     Ternary(first:Expression, op1:Token, second:Expression, op2:Token, third:Expression);
     Grouping(expression:Expression);
+    Variable(name:Token);
+    Assignment(name:Token, value:Expression);
 }
 
 
@@ -73,6 +75,12 @@ class AstPrinter {
 
             case Grouping(expression):
                 parenthesize("group", expression);
+
+            case Variable(name):
+                name.lexeme;
+
+            case Assignment(name, value):
+                '(= ${name.lexeme} ${print(value)})';
         }
     }
 }
@@ -100,6 +108,12 @@ class RpnPrinter {
 
             case Grouping(expression):
                 stack("group", expression);
+
+            case Variable(name):
+                name.lexeme;
+
+            case Assignment(name, value):
+                '${print(value)} ${name.lexeme} =';
         }
     }
 }
