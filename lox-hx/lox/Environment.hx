@@ -2,6 +2,8 @@ package lox;
 
 import lox.Interpreter.RuntimeError;
 
+var undefined = {};
+
 class Environment {
     final enclosing:Null<Environment>;
     private final values:Map<String, Null<Dynamic>> = [];
@@ -12,7 +14,13 @@ class Environment {
 
     public function get(name:Token):Dynamic {
         if (values.exists(name.lexeme)) {
-            return values.get(name.lexeme);
+            var value = values.get(name.lexeme);
+            
+            // Chapter 8 Challenge 2
+            if (value != undefined)
+                return value;
+
+            throw new RuntimeError(name, 'Uninitialized variable \'${name.lexeme}\'');
         }
 
         if (enclosing != null)
@@ -36,6 +44,6 @@ class Environment {
     }
 
     public function define(name:Token, ?value:Dynamic) {
-        values.set(name.lexeme, value);
+        values.set(name.lexeme, (value != null) ? value : undefined);
     }
 }
