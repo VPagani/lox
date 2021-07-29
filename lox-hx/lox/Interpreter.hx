@@ -5,12 +5,24 @@ using StringTools;
 class Interpreter {
     public function new() {}
 
-    public function interpret(expr:Expression) {
+    public function interpret(statements:Array<Statement>) {
         try {
-            var value = evaluate(expr);
-            Sys.println(stringify(value));
+            for (statement in statements) {
+                execute(statement);
+            }
         } catch (error:RuntimeError) {
             Lox.runtimeError(error);
+        }
+    }
+
+    private function execute(stmt:Statement):Void {
+        switch (stmt) {
+            case Expr(expression):
+                evaluate(expression);
+
+            case Print(expression):
+                var value = evaluate(expression);
+                Sys.println(stringify(value));
         }
     }
 

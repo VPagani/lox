@@ -1,6 +1,7 @@
 package lox;
 
 import lox.Expression;
+import lox.Statement;
 import lox.TokenType;
 
 class Parser {
@@ -12,11 +13,50 @@ class Parser {
     }
 
     public function parse() {
-        try {
-            return expression();
-        } catch (error:ParseError) {
-            return null;
+        return program();
+    }
+
+    /**
+     * __program__ → __statement__* EOF
+     */
+    private function program() {
+        var statements:Array<Statement> = [];
+
+        while (!isAtEnd()) {
+            statements.push(statement());
         }
+
+        return statements;
+
+    }
+
+    /**
+     * __statement__ → __printStatement__
+     * 
+     * __statement__ → __expressionStatement__
+     */
+    private function statement():Statement {
+        if (match(PRINT)) return printStatement();
+
+        return expressionStatement();
+    }
+
+    /**
+     * __printStatement__ → `print` __expression__ `;`
+     */
+    private function printStatement():Statement {
+        var value = expression();
+        consume(SEMICOLON, "Expected ';' after value");
+        return Print(value);
+    }
+
+    /**
+     * __expressionStatement__ → __expression__ `;`
+     */
+    private function expressionStatement():Statement {
+        var expr = expression();
+        consume(SEMICOLON, "Expected ';' after expression");
+        return Expr(expr);
     }
 
     // Chapter 6 Chalenge 1 (Comma Operator)

@@ -47,11 +47,11 @@ class Lox {
         var scanner = new Scanner(source);
         var tokens = scanner.scanTokens();
         var parser = new Parser(tokens);
-        var expression = parser.parse();
+        var program = parser.parse();
     
         if (hadError) return;
 
-        interpreter.interpret(expression);
+        interpreter.interpret(program);
     }
 
     public static function report(line:Int, where:String, message:String) {
