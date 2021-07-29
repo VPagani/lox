@@ -127,6 +127,39 @@ class Parser {
             return Unary(op, right);
         }
 
+        return unaryError();
+    }
+
+    // Chapter 6 Challenge 3
+    /** 
+     * __unaryError__ → ( `,` ) __unaryError__
+     * 
+     * __unaryError__ → ( `?` | `:` ) __unaryError__
+     * 
+     * __unaryError__ → ( `!=` | `==` ) __unaryError__
+     * 
+     * __unaryError__ → ( `>` | `>=` | `<` | `<=` ) __unaryError__
+     * 
+     * __unaryError__ → ( `+` ) __unaryError__
+     * 
+     * __unaryError__ → ( `/` | `*` ) __unaryError__
+     * 
+     * __unaryError__ → __primary__
+     */
+    private function unaryError():Expression {
+        while (match(
+            COMMA, // expression
+            QUESTION, COLON, // ternary
+            BANG_EQUAL, EQUAL_EQUAL, // equality
+            GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, // comparision
+            PLUS, // term
+            SLASH, STAR // factor
+        )) {
+            var op = previous();
+            error(op, 'Expected expression before \'${op.lexeme}\'');
+            return unaryError(); // discard right-hand operand
+        }
+
         return primary();
     }
 
@@ -135,11 +168,11 @@ class Parser {
      * 
      * __primary__ → _STRING_
      * 
-     * __primary__ → "true" | "false"
+     * __primary__ → `true` | `false`
      * 
-     * __primary__ -> "nil"
+     * __primary__ -> `nil`
      * 
-     * __primary__ -> "(" __expression__ ")"
+     * __primary__ -> `(` __expression__ `)`
      */
      private function primary():Expression {
         if (match(FALSE)) return Literal(false);
@@ -152,7 +185,7 @@ class Parser {
 
         if (match(LEFT_PAREN)) {
             var expr = expression();
-            consume(RIGHT_PAREN, "Expected ')'  after expression");
+            consume(RIGHT_PAREN, "Expected ')' after expression");
             return Grouping(expr);
         }
 
