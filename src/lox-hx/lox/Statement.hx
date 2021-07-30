@@ -5,4 +5,5 @@ enum Statement {
     Print(expression:Expression);
     Block(statements:Array<Statement>);
     VarDecl(name:Token, ?initializer:Expression);
+    If(condition:Expression, thenBranch:Statement, ?elseBranch:Statement);
 }

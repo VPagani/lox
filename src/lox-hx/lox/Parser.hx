@@ -70,17 +70,34 @@ class Parser {
     }
 
     /**
+     * __statement__ → `if` __ifStatement__
+     * 
      * __statement__ → `print` __printStatement__
      * 
-     * __statement__ → __expressionStatement__
-     * 
      * __statement__ → `{` __block__
+     * 
+     * __statement__ → __expressionStatement__
      */
     private function statement():Statement {
+        if (match(IF)) return ifStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_BRACE)) return Block(block());
 
         return expressionStatement();
+    }
+
+    /**
+     * __ifStatement__ → `(` __expression__ `)` __statement__ ( `else` __statement__ )?
+     */
+    private function ifStatement():Statement {
+        consume(LEFT_PAREN, "Expected '(' after 'if'");
+        var condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after if confition");
+
+        var thenBranch = statement();
+        var elseBranch = match(ELSE) ? statement() : null;
+
+        return If(condition, thenBranch, elseBranch);
     }
 
     /**

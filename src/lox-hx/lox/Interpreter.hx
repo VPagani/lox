@@ -47,6 +47,13 @@ class Interpreter {
                 }
 
                 environment.define(name, value);
+
+            case If(condition, thenBranch, elseBranch):
+                if (isTruthy(evaluate(condition))) {
+                    execute(thenBranch);
+                } else if (elseBranch != null) {
+                    execute(elseBranch);
+                }
         }
     }
 
