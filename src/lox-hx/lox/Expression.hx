@@ -4,6 +4,7 @@ enum Expression {
     Literal(?value:Dynamic);
     Unary(op:Token, right:Expression);
     Binary(left:Expression, op:Token, right:Expression);
+    Logical(left:Expression, op:Token, right:Expression);
     Ternary(first:Expression, op1:Token, second:Expression, op2:Token, third:Expression);
     Grouping(expression:Expression);
     Variable(name:Token);
@@ -67,7 +68,7 @@ class AstPrinter {
             case Unary(op, right):
                 parenthesize(op.lexeme, right);
 
-            case Binary(left, op, right):
+            case Binary(left, op, right) | Logical(left, op, right):
                 parenthesize(op.lexeme, left, right);
 
             case Ternary(first, op1, second, op2, third):
@@ -100,7 +101,7 @@ class RpnPrinter {
             case Unary(op, right):
                 stack(op.lexeme, right);
 
-            case Binary(left, op, right):
+            case Binary(left, op, right) | Logical(left, op, right):
                 stack(op.lexeme, left, right);
 
             case Ternary(first, op1, second, op2, third):

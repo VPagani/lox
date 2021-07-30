@@ -1,0 +1,10 @@
+print "hi" or 2; // "hi"
+print nil or "yes"; // "yes"
+
+var a = "foo";
+
+if (a == "foo") print "a is 'foo'"; else print "a is not 'foo'";
+
+if (a + "bar" != "bar") {
+    print "a is not only 'bar'";
+}

@@ -148,6 +148,16 @@ class Interpreter {
                     case _: throw new RuntimeError(op, 'Invalid binary operator ${op.lexeme}');
                 }
 
+            case Logical(left, op, right):
+                var left = evaluate(left);
+
+                switch (op.type) {
+                    case OR if (isTruthy(left)): return left;
+                    case AND if (!isTruthy(left)): return left;
+                    case _:
+                        return evaluate(right);
+                }
+
             case Ternary(first, op1, second, op2, third):
                 var first = evaluate(first);
 

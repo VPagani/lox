@@ -178,21 +178,51 @@ class Parser {
     // Chapter 6 Chalenge 2 (Conditional Operator)
     /**
      * 
-     * __ternary__ -> (__equality__  `?` __equality__ `:`)* __ternary__
+     * __ternary__ → ( __or__  `?` __or__ `:`)* __ternary__
      */
     private function ternary():Expression {
-        var first = equality();
+        var first = or();
 
         if (!match(QUESTION)) return first;
 
         var op1 = previous();
-        var second = equality();
+        var second = or();
 
         if (!match(COLON))
             throw error(peek(), "Expected ':' after expression");
 
         var op2 = previous();
         return Ternary(first, op1, second, op2, ternary());
+    }
+
+    /**
+     * __or__ → __and__ ( `or` __and__ )*
+     */
+    private function or() {
+        var expr = and();
+
+        while (match(OR)) {
+            var op = previous();
+            var right = and();
+            expr = Logical(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    /**
+     * __and__ → __equality__ ( `and` __equality__ )*
+     */
+    private function and() {
+        var expr = equality();
+
+        while (match(AND)) {
+            var op = previous();
+            var right = equality();
+            expr = Logical(expr, op, right);
+        }
+
+        return expr;
     }
 
     /**
