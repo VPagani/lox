@@ -164,7 +164,7 @@ class Scanner {
                 }
             }
             current += 2;
-        } else {
+        } else if (depth == 0) {
             addToken(SLASH);
         }
     }
