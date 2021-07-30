@@ -8,3 +8,32 @@ if (a == "foo") print "a is 'foo'"; else print "a is not 'foo'";
 if (a + "bar" != "bar") {
     print "a is not only 'bar'";
 }
+
+// Chapter 9 Challenge 1
+/*
+
+Answer:
+
+    I think using lambda calculus, probably what Haskell uses(?)
+
+Example code:
+
+    fun True(thenBranch, elseBranch) {
+        thenBranch();
+    }
+
+    fun False(thenBranch, elseBranch) {
+        elseBranch();
+    }
+
+    fun If(condition, thenBranch, elseBranch) {
+        condition(thenBranch, elseBranch)
+    }
+
+    If(True, fun thenBranch() {
+        print "It is true!";
+    }, fun elseBranch() {
+        print "It is false!";
+    });
+
+*/

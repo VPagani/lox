@@ -55,7 +55,7 @@ class Parser {
     }
 
     /**
-     * varDeclaration → _IDENTIFIER_ ( `=` __expression__ )? `;`
+     * __varDeclaration__ → _IDENTIFIER_ ( `=` __expression__ )? `;`
      */
     private function varDeclaration():Statement {
         var name = consume(IDENTIFIER, "Expected variable name");
@@ -72,6 +72,8 @@ class Parser {
     /**
      * __statement__ → `if` __ifStatement__
      * 
+     * __statement__ → `for` __forStatement__
+     * 
      * __statement__ → `while` __whileStatement__
      * 
      * __statement__ → `print` __printStatement__
@@ -82,6 +84,7 @@ class Parser {
      */
     private function statement():Statement {
         if (match(IF)) return ifStatement();
+        if (match(FOR)) return forStatement();
         if (match(WHILE)) return whileStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_BRACE)) return Block(block());
@@ -101,6 +104,53 @@ class Parser {
         var elseBranch = match(ELSE) ? statement() : null;
 
         return If(condition, thenBranch, elseBranch);
+    }
+
+    /**
+     * __forStatement__ → `(` ( `;` | `var` __varDeclaration__ | __expressionStatement__ ) __expression__? `;` __expression__? `)` __statement__
+     */
+    private function forStatement():Statement {
+        consume(LEFT_PAREN, "Expected '(' after 'if'");
+        
+        var initializer;
+        if (match(SEMICOLON)) {
+            initializer = null;
+        } else if (match(VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+
+        var condition:Null<Expression> = null;
+        if (!match(SEMICOLON)) {
+            condition = expression();
+            consume(SEMICOLON, "Expected ';' after loop condition");
+        }
+
+        var increment:Null<Expression> = null;
+        if (!match(RIGHT_PAREN)) {
+            increment = expression();
+            consume(RIGHT_PAREN, "Expected ')' after loop increment");
+        }
+
+        var body = statement();
+
+        if (increment != null) {
+            body = Block([ body, Expr(increment) ]);
+        }
+
+        if (condition == null) {
+            condition = Literal(true);
+        }
+
+        body = While(condition, body);
+
+        if (initializer != null) {
+            body = Block([ initializer, body ]);
+        }
+
+        return body;
     }
 
     /**
