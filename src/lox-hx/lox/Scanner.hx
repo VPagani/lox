@@ -26,6 +26,7 @@ class Scanner {
         "true" => TRUE,
         "var" => VAR,
         "while" => WHILE,
+        "break" => BREAK,
     ];
 
     public function new(source:String) {

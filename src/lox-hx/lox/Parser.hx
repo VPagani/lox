@@ -43,11 +43,11 @@ class Parser {
      * 
      * __declaration__ → __statement__
      */
-    private function declaration():Null<Statement> {
+    private function declaration(canBreak:Bool = false):Null<Statement> {
         try {
             if (match(VAR)) return varDeclaration();
 
-            return statement();
+            return statement(canBreak);
         } catch (error:ParseError) {
             synchronize();
             return null;
@@ -82,12 +82,18 @@ class Parser {
      * 
      * __statement__ → __expressionStatement__
      */
-    private function statement():Statement {
-        if (match(IF)) return ifStatement();
+    private function statement(canBreak:Bool = false):Statement {
+        if (match(IF)) return ifStatement(canBreak);
         if (match(FOR)) return forStatement();
         if (match(WHILE)) return whileStatement();
         if (match(PRINT)) return printStatement();
-        if (match(LEFT_BRACE)) return Block(block());
+        if (match(LEFT_BRACE)) return Block(block(canBreak));
+
+        // Chapter 9 Challenge 3
+        if (canBreak && match(BREAK)) {
+            consume(SEMICOLON, "Expected ';' after break");
+            return Break;
+        }
 
         return expressionStatement();
     }
@@ -95,13 +101,13 @@ class Parser {
     /**
      * __ifStatement__ → `(` __expression__ `)` __statement__ ( `else` __statement__ )?
      */
-    private function ifStatement():Statement {
+    private function ifStatement(canBreak:Bool = false):Statement {
         consume(LEFT_PAREN, "Expected '(' after 'if'");
         var condition = expression();
         consume(RIGHT_PAREN, "Expected ')' after if confition");
 
-        var thenBranch = statement();
-        var elseBranch = match(ELSE) ? statement() : null;
+        var thenBranch = statement(canBreak);
+        var elseBranch = match(ELSE) ? statement(canBreak) : null;
 
         return If(condition, thenBranch, elseBranch);
     }
@@ -134,7 +140,7 @@ class Parser {
             consume(RIGHT_PAREN, "Expected ')' after loop increment");
         }
 
-        var body = statement();
+        var body = statement(true);
 
         if (increment != null) {
             body = Block([ body, Expr(increment) ]);
@@ -161,7 +167,7 @@ class Parser {
         var condition = expression();
         consume(RIGHT_PAREN, "Expected ')' after while confition");
 
-        var body = statement();
+        var body = statement(true);
         return While(condition, body);
     }
 
@@ -186,11 +192,11 @@ class Parser {
     /**
      * __block__ -> __declaration__* `}`
      */
-    private function block():Array<Statement> {
+    private function block(canBreak:Bool = false):Array<Statement> {
         var statements:Array<Statement> = [];
 
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
-            var statement = declaration();
+            var statement = declaration(canBreak);
             if (statement != null)
                 statements.push(statement);
         }

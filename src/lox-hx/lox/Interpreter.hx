@@ -27,17 +27,19 @@ class Interpreter {
         }
     }
 
-    private function execute(stmt:Statement):Void {
+    private function execute(stmt:Statement) {
         switch (stmt) {
             case Expr(expression):
                 evaluate(expression);
+                return false;
 
             case Print(expression):
                 var value = evaluate(expression);
                 Sys.println(stringify(value));
+                return false;
 
             case Block(statements):
-                executeBlock(statements, new Environment(environment));
+                return executeBlock(statements, new Environment(environment));
 
             case VarDecl(name, initializer):
                 var value = null;
@@ -47,29 +49,37 @@ class Interpreter {
                 }
 
                 environment.define(name, value);
+                return false;
 
             case If(condition, thenBranch, elseBranch):
                 if (isTruthy(evaluate(condition))) {
-                    execute(thenBranch);
+                    return execute(thenBranch);
                 } else if (elseBranch != null) {
-                    execute(elseBranch);
+                    return execute(elseBranch);
                 }
 
             case While(condition, body):
                 while (isTruthy(evaluate(condition))) {
-                    execute(body);
+                    var broke = execute(body);
+                    if (broke) break;
                 }
+            
+            case Break: return true;
         }
+
+        return false;
     }
 
     private function executeBlock(stmts:Array<Statement>, environment:Environment) {
         var previous = this.environment;
+        var broke = false;
 
         try {
             this.environment = environment;
 
             for (stmt in stmts) {
-                execute(stmt);
+                broke = execute(stmt);
+                if (broke) break;
             }
         } catch (error) {
             this.environment = previous;
@@ -77,6 +87,7 @@ class Interpreter {
         }
         
         this.environment = previous;
+        return broke;
     }
 
     private function evaluate(expr:Expression):Dynamic {

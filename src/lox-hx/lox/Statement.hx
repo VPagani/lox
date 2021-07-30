@@ -7,4 +7,5 @@ enum Statement {
     VarDecl(name:Token, ?initializer:Expression);
     If(condition:Expression, thenBranch:Statement, ?elseBranch:Statement);
     While(condition:Expression, body:Statement);
+    Break;
 }

@@ -32,3 +32,26 @@ Example code:
     printNumbers(10); // 10 9 8 ... 2 1 0
 
 */
+
+// Chapter 9 Challenge 3
+
+print "";
+print "while with break";
+
+var i = 0;
+while (i <= 11) {
+    print i;
+    i = i + 1;
+    if (i == 10) break;
+}
+
+
+print "";
+print "for with break";
+
+var i = 0;
+for (;;) {
+    print i;
+    i = i + 1;
+    if (i == 10) break;
+}
