@@ -54,6 +54,11 @@ class Interpreter {
                 } else if (elseBranch != null) {
                     execute(elseBranch);
                 }
+
+            case While(condition, body):
+                while (isTruthy(evaluate(condition))) {
+                    execute(body);
+                }
         }
     }
 

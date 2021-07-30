@@ -72,6 +72,8 @@ class Parser {
     /**
      * __statement__ → `if` __ifStatement__
      * 
+     * __statement__ → `while` __whileStatement__
+     * 
      * __statement__ → `print` __printStatement__
      * 
      * __statement__ → `{` __block__
@@ -80,6 +82,7 @@ class Parser {
      */
     private function statement():Statement {
         if (match(IF)) return ifStatement();
+        if (match(WHILE)) return whileStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_BRACE)) return Block(block());
 
@@ -98,6 +101,18 @@ class Parser {
         var elseBranch = match(ELSE) ? statement() : null;
 
         return If(condition, thenBranch, elseBranch);
+    }
+
+    /**
+     * __ifStatement__ → `(` __expression__ `)` __statement__ 
+     */
+    private function whileStatement():Statement {
+        consume(LEFT_PAREN, "Expected '(' after 'while'");
+        var condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after while confition");
+
+        var body = statement();
+        return While(condition, body);
     }
 
     /**
