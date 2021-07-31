@@ -2,6 +2,7 @@ package lox;
 
 enum Expression {
     Literal(?value:Dynamic);
+    Call(callee:Expression, paren:Token, arguments:Array<Expression>);
     Unary(op:Token, right:Expression);
     Binary(left:Expression, op:Token, right:Expression);
     Logical(left:Expression, op:Token, right:Expression);
@@ -45,25 +46,16 @@ Bonus Answer:
 // Challenge 2 (using pattern matching)
 class AstPrinter {
     static function parenthesize(name:String, ...expressions:Expression) {
-        var builder = new StringBuf();
-
-        builder.add("(");
-        builder.add(name);
-
-        for (expression in expressions) {
-            builder.add(" ");
-            builder.add(print(expression));
-        }
-
-        builder.add(")");
-
-        return builder.toString();
+        return '($name ${expressions.toArray().map(print).join(" ")} )';
     }
 
     public static function print(expression:Expression):String {
         return switch (expression) {
             case Literal(value):
                 (value == null) ? "nil" : Std.string(value);
+
+            case Call(callee, paren, arguments):
+                parenthesize('[${print(callee)}]', ...arguments);
             
             case Unary(op, right):
                 parenthesize(op.lexeme, right);
@@ -89,7 +81,8 @@ class AstPrinter {
 // Challenge 3
 class RpnPrinter {
     static function stack(name:String, ...expressions:Expression) {
-        var exprs = expressions.toArray().map(print).join(" ");
+        var expressions = expressions.toArray();
+        var exprs = expressions.map(print).join(" ");
         return '$exprs $name';
     }
 
@@ -97,6 +90,9 @@ class RpnPrinter {
         return switch (expression) {
             case Literal(value):
                 (value == null) ? "nil" : Std.string(value);
+
+            case Call(callee, paren, arguments):
+                stack('(${print(callee)})', ...arguments);
             
             case Unary(op, right):
                 stack(op.lexeme, right);
@@ -108,7 +104,7 @@ class RpnPrinter {
                 stack(op1.lexeme, first, second, third);
 
             case Grouping(expression):
-                stack("group", expression);
+                print(expression);
 
             case Variable(name):
                 name.lexeme;

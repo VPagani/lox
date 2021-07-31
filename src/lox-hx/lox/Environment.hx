@@ -43,7 +43,7 @@ class Environment {
         throw new RuntimeError(name, 'Undefined variable \'${name.lexeme}\'');
     }
 
-    public function define(name:Token, ?value:Dynamic) {
-        values.set(name.lexeme, (value != null) ? value : undefined);
+    public function define(name:String, ?value:Dynamic) {
+        values.set(name, (value != null) ? value : undefined);
     }
 }

@@ -3,9 +3,13 @@ package lox;
 using StringTools;
 
 class Interpreter {
-    private var environment = new Environment();
+    public final globals = new Environment();
+    private var environment:Environment;
 
-    public function new() {}
+    public function new() {
+        environment = globals;
+        globals.define("clock", new lox.native.Clock());
+    }
 
     public function interpret(statements:Array<Statement>) {
         try {
@@ -48,6 +52,9 @@ class Interpreter {
 
                 environment.define(name.lexeme, value);
 
+            case Function(name, params, body):
+                var func = new Function(name, params, body, environment);
+                environment.define(name.lexeme, func);
 
             case If(condition, thenBranch, elseBranch):
                 if (isTruthy(evaluate(condition))) {
@@ -66,11 +73,17 @@ class Interpreter {
                 }
             
             case Break: throw new BreakUnwind();
+
+            case Return(keyword, expression):
+                var value = expression != null ? evaluate(expression) : null;
+
+                throw new ReturnUnwind(value);
         }
 
         return false;
     }
 
+    @:allow(lox.Function.call)
     private function executeBlock(stmts:Array<Statement>, environment:Environment) {
         var previous = this.environment;
         var broke = false;
@@ -93,6 +106,20 @@ class Interpreter {
     private function evaluate(expr:Expression):Dynamic {
         return switch (expr) {
             case Literal(value): value;
+
+            case Call(callee, paren, arguments):
+                var callee = evaluate(callee);
+                var func = cast(callee, Callable);
+
+                if (arguments.length != func.arity()) {
+                    throw new RuntimeError(paren, 'Expected ${func.arity()} arguments but got ${arguments.length}');
+                }
+
+                if (!Std.isOfType(callee, Callable)) {
+                    throw new RuntimeError(paren, "Can only call functions and classes.");
+                }
+
+                return func.call(this, arguments.map(evaluate));
 
             case Unary(op, right):
                 var right = evaluate(right);
@@ -242,4 +269,12 @@ class RuntimeError extends haxe.Exception {
 
 class BreakUnwind {
     public function new() {}
+}
+
+class ReturnUnwind {
+    public final value:Dynamic;
+
+    public function new(value:Dynamic) {
+        this.value = value;
+    }
 }

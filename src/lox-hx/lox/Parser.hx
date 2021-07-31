@@ -41,11 +41,14 @@ class Parser {
     /**
      * __declaration__ → `var` __varDeclaration__
      * 
+     * __declaration__ → `fun` __funDeclaration__
+     * 
      * __declaration__ → __statement__
      */
     private function declaration(canBreak:Bool = false):Null<Statement> {
         try {
             if (match(VAR)) return varDeclaration();
+            if (match(FUN)) return funDeclaration(function_);
 
             return statement(canBreak);
         } catch (error:ParseError) {
@@ -70,6 +73,35 @@ class Parser {
     }
 
     /**
+     * __funDeclaration__ → _IDENTIFIER_ `(` __parameters__? `)` `{` __block__
+     * 
+     * __parameters__ → _IDENTIFIER_ ( `,` _IDENTIFIER_ )*
+     */
+    private function funDeclaration(kind:FunctionKind):Statement {
+        var name = consume(IDENTIFIER, 'Expected $kind name');
+        consume(LEFT_PAREN, 'Expected \'(\' after $kind name');
+
+        var params = [];
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (params.length > 255) {
+                    error(peek(), "Can't have more than 255 parameters");
+                }
+
+                params.push(
+                    consume(IDENTIFIER, "Expected parameter name")
+                );
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, "Expected ')' after parameters");
+
+        consume(LEFT_BRACE, 'Expect \'{\' before $kind body');
+        var body = block();
+        return Statement.Function(name, params, body);
+    }
+
+    /**
      * __statement__ → `if` __ifStatement__
      * 
      * __statement__ → `for` __forStatement__
@@ -77,6 +109,8 @@ class Parser {
      * __statement__ → `while` __whileStatement__
      * 
      * __statement__ → `print` __printStatement__
+     * 
+     * __statement__ → `return` __returnStatement__
      * 
      * __statement__ → `{` __block__
      * 
@@ -89,6 +123,7 @@ class Parser {
         if (match(FOR)) return forStatement();
         if (match(WHILE)) return whileStatement();
         if (match(PRINT)) return printStatement();
+        if (match(RETURN)) return returnStatement();
         if (match(LEFT_BRACE)) return Block(block(canBreak));
 
         // Chapter 9 Challenge 3
@@ -191,6 +226,22 @@ class Parser {
 
         consume(SEMICOLON, "Expected ';' after break");
         return Break;
+    }
+
+    /**
+     * __returnStatement__ → __expression__? `;`
+     */
+    private function returnStatement():Statement {
+        var keyword = previous();
+        var value = null;
+
+        if (!check(SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(SEMICOLON, "Expected ';' after return value");
+
+        return Statement.Return(keyword, value);
     }
 
     /**
@@ -414,7 +465,50 @@ class Parser {
             return unaryError(); // discard right-hand operand
         }
 
-        return primary();
+        return call();
+    }
+
+    /**
+     * __call__ → __primary__ ( `(` __arguments__? `)` )*
+     */
+    private function call() {
+        var expr = primary();
+    
+        while (true) { 
+          if (match(LEFT_PAREN)) {
+            var args = arguments();
+            var paren = consume(RIGHT_PAREN, "Expected ')' after arguments");
+            expr = Call(expr, paren, args);
+          } else {
+            break;
+          }
+        }
+    
+        return expr;
+    }
+
+    /**
+     * __arguments__ → __assignment__ ( `,` __assignment__ )*
+     * 
+     * OBS:
+     * 
+     * Here I had to change from __expression__ to __assignment__
+     * because __expression__ parses `,` as an operator and
+     * conflicts with arguments' `,`
+     */
+    private function arguments() {
+        var args = [];
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (args.length >= 255) {
+                    error(peek(), "Function call can't have more than 255 arguments");
+                }
+                args.push(assignment()); 
+            } while(match(COMMA));
+        }
+
+        return args;
     }
 
     /**
@@ -513,3 +607,7 @@ class Parser {
 }
 
 class ParseError extends haxe.Exception {}
+
+enum abstract FunctionKind(String) {
+    var function_ = "function";
+}
