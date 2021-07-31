@@ -31,12 +31,10 @@ class Interpreter {
         switch (stmt) {
             case Expr(expression):
                 evaluate(expression);
-                return false;
 
             case Print(expression):
                 var value = evaluate(expression);
                 Sys.println(stringify(value));
-                return false;
 
             case Block(statements):
                 return executeBlock(statements, new Environment(environment));
@@ -48,23 +46,26 @@ class Interpreter {
                     value = evaluate(initializer);
                 }
 
-                environment.define(name, value);
-                return false;
+                environment.define(name.lexeme, value);
+
 
             case If(condition, thenBranch, elseBranch):
                 if (isTruthy(evaluate(condition))) {
-                    return execute(thenBranch);
+                    execute(thenBranch);
                 } else if (elseBranch != null) {
-                    return execute(elseBranch);
+                    execute(elseBranch);
                 }
 
             case While(condition, body):
                 while (isTruthy(evaluate(condition))) {
-                    var broke = execute(body);
-                    if (broke) break;
+                    try {
+                        execute(body);
+                    } catch (e:BreakUnwind) {
+                        break;
+                    }
                 }
             
-            case Break: return true;
+            case Break: throw new BreakUnwind();
         }
 
         return false;
@@ -78,8 +79,7 @@ class Interpreter {
             this.environment = environment;
 
             for (stmt in stmts) {
-                broke = execute(stmt);
-                if (broke) break;
+                execute(stmt);
             }
         } catch (error) {
             this.environment = previous;
@@ -238,4 +238,8 @@ class RuntimeError extends haxe.Exception {
 
         this.token = token;
     }
+}
+
+class BreakUnwind {
+    public function new() {}
 }

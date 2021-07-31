@@ -80,6 +80,8 @@ class Parser {
      * 
      * __statement__ → `{` __block__
      * 
+     * __statement__ → `break` __breakStatement__
+     * 
      * __statement__ → __expressionStatement__
      */
     private function statement(canBreak:Bool = false):Statement {
@@ -90,10 +92,7 @@ class Parser {
         if (match(LEFT_BRACE)) return Block(block(canBreak));
 
         // Chapter 9 Challenge 3
-        if (canBreak && match(BREAK)) {
-            consume(SEMICOLON, "Expected ';' after break");
-            return Break;
-        }
+        if (match(BREAK)) return breakStatement(canBreak);
 
         return expressionStatement();
     }
@@ -178,6 +177,20 @@ class Parser {
         var value = expression();
         consume(SEMICOLON, "Expected ';' after value");
         return Print(value);
+    }
+
+    /**
+     * __breakStatement__ → `;`
+     */
+    private function breakStatement(canBreak:Bool = false):Statement {
+        var keyword = previous();
+
+        if (!canBreak) {
+            throw error(keyword, "Can only break inside loops");
+        }
+
+        consume(SEMICOLON, "Expected ';' after break");
+        return Break;
     }
 
     /**

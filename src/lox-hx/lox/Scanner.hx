@@ -157,7 +157,6 @@ class Scanner {
             while (peek() != "\n" && !isAtEnd()) advance();
         } else if (match("*")) {
             while (peek() != "*" || peek(1) != "/") {
-                trace([peek(), peek(1)]);
                 var char = advance();
                 switch (char) {
                     case "\n": line++;

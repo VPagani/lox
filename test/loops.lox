@@ -39,7 +39,7 @@ print "";
 print "while with break";
 
 var i = 0;
-while (i <= 11) {
+while (true) {
     print i;
     i = i + 1;
     if (i == 10) break;
@@ -53,5 +53,7 @@ var i = 0;
 for (;;) {
     print i;
     i = i + 1;
-    if (i == 10) break;
+    if (i == 10) {
+        break;
+    }
 }
