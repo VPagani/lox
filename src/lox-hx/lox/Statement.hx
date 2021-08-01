@@ -8,6 +8,6 @@ enum Statement {
     Function(name:Token, params:Array<Token>, body:Array<Statement>);
     If(condition:Expression, thenBranch:Statement, ?elseBranch:Statement);
     While(condition:Expression, body:Statement);
-    Break;
+    Break(keyword:Token);
     Return(keyword:Token, ?value:Expression);
 }

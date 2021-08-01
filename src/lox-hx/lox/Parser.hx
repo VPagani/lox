@@ -220,12 +220,12 @@ class Parser {
     private function breakStatement(canBreak:Bool = false):Statement {
         var keyword = previous();
 
-        if (!canBreak) {
-            throw error(keyword, "Can only break inside loops");
-        }
+        // if (!canBreak) {
+        //     throw error(keyword, "Can only break inside loops");
+        // }
 
         consume(SEMICOLON, "Expected ';' after break");
-        return Break;
+        return Break(keyword);
     }
 
     /**

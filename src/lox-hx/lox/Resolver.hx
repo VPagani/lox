@@ -3,6 +3,7 @@ package lox;
 class Resolver {
     private final interpreter:Interpreter;
     private final scopes:Scopes = new Scopes();
+    private var context = Context.NONE;
 
     public function new(interpreter:Interpreter) {
         this.interpreter = interpreter;
@@ -38,7 +39,7 @@ class Resolver {
                 declare(name);
                 define(name);
 
-                resolveFunction(params, body);
+                resolveFunction(params, body, Context.FUNCTION);
 
             case If(condition, thenBranch, elseBranch):
                 resolveExpression(condition);
@@ -48,11 +49,24 @@ class Resolver {
 
             case While(condition, body):
                 resolveExpression(condition);
-                resolveStatement(body);
-            
-            case Break: // do nothing
 
-            case Return(_, expression):
+                var enclosingContext = context;
+                context = Context.LOOP;
+
+                resolveStatement(body);
+
+                context = enclosingContext;
+            
+            case Break(keyword):
+                if (context != Context.LOOP) {
+                    Lox.errorToken(keyword, "Can only break inside a loop");
+                }
+
+            case Return(keyword, expression):
+                if (context != Context.FUNCTION) {
+                    Lox.errorToken(keyword, "Can't return from top-level code.");
+                }
+
                 if (expression != null)
                     resolveExpression(expression);
         }
@@ -95,7 +109,9 @@ class Resolver {
         }
     }
 
-    private function resolveFunction(params:Array<Token>, body:Array<Statement>) {
+    private function resolveFunction(params:Array<Token>, body:Array<Statement>, context:Context) {
+        var enclosingContext = context;
+
         beginScope();
         for (param in params) {
             declare(param);
@@ -103,6 +119,8 @@ class Resolver {
         }
         resolve(body);
         endScope();
+
+        context = enclosingContext;
     }
 
     private function beginScope() {
@@ -162,4 +180,10 @@ abstract Scopes(ScopesT) from ScopesT {
             next: () -> { key: i,  value: this[i >= 0 ? i-- : i] }
         }
     }
+}
+
+enum Context {
+    NONE;
+    LOOP;
+    FUNCTION;
 }

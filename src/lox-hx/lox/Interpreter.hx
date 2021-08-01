@@ -78,9 +78,9 @@ class Interpreter {
                     }
                 }
             
-            case Break: throw new BreakUnwind();
+            case Break(_): throw new BreakUnwind();
 
-            case Return(keyword, expression):
+            case Return(_, expression):
                 var value = expression != null ? evaluate(expression) : null;
 
                 throw new ReturnUnwind(value);
