@@ -46,4 +46,18 @@ class Environment {
     public function define(name:String, ?value:Dynamic) {
         values.set(name, (value != null) ? value : undefined);
     }
+
+    public function ancestor(distance:Int) {
+        var environment = this;
+        for (i in 0...distance) {
+            environment = environment.enclosing;
+        }
+        return environment;
+    }
+
+    public function getAt(distance:Int, name:String)
+        return ancestor(distance).values.get(name);
+
+    public function assignAt(distance:Int, name:Token, value:Dynamic)
+        ancestor(distance).values.set(name.lexeme, value);
 }

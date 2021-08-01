@@ -5,6 +5,7 @@ using StringTools;
 class Interpreter {
     public final globals = new Environment();
     private var environment:Environment;
+    public final locals:Map<Expression, Int> = new Map();
 
     public function new() {
         environment = globals;
@@ -29,6 +30,11 @@ class Interpreter {
         } catch (error:RuntimeError) {
             Lox.runtimeError(error);
         }
+    }
+
+    @:allow(lox.Resolver.resolveLocal)
+    private function resolve(expression:Expression, depth:Int) {
+        locals.set(expression, depth);
     }
 
     private function execute(stmt:Statement) {
@@ -211,11 +217,19 @@ class Interpreter {
 
             case Grouping(expression): evaluate(expression);
 
-            case Variable(name): environment.get(name);
+            case Variable(name):
+                lookUpVariable(name, expr);
 
             case Assignment(name, value):
                 var value = evaluate(value);
-                environment.assign(name, value);
+                var distance = locals.get(expr);
+
+                if (distance != null) {
+                    environment.assignAt(distance, name, value);
+                } else {
+                    globals.assign(name, value);
+                }
+
                 return value;
         }
     }
@@ -254,6 +268,16 @@ class Interpreter {
         }
 
         return Std.string(value);
+    }
+
+    private function lookUpVariable(name:Token, expression:Expression) {
+        var distance = locals.get(expression);
+
+        if (distance != null) {
+            return environment.getAt(distance, name.lexeme);
+        }
+
+        return globals.get(name);
     }
 }
 

@@ -25,5 +25,5 @@ fun makeCounter() {
 var counter = makeCounter();
 
 print "Counter";
-counter(); // "1".
-counter(); // "2".
+counter(); // "1"
+counter(); // "2"

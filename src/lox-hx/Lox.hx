@@ -3,6 +3,8 @@ import sys.io.File;
 import lox.Scanner;
 import lox.Parser;
 import lox.Interpreter;
+import lox.Resolver;
+
 
 using StringTools;
 
@@ -57,6 +59,8 @@ class Lox {
 
         if (hadError) return;
 
+        var resolver = new Resolver(interpreter);
+        resolver.resolve(program);
         interpreter.interpret(program);
     }
 
@@ -68,10 +72,13 @@ class Lox {
 
         try {
             var expression = parser.parseExpression();
+            var program = [lox.Statement.Print(expression)];
 
             if (hadError) return;
-            
-            interpreter.interpretExpression(expression);
+
+            var resolver = new Resolver(interpreter);
+            resolver.resolve(program);
+            interpreter.interpret(program);
         } catch (e:ParseError) {}
     }
 
