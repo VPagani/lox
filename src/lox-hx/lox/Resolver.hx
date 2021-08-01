@@ -98,10 +98,16 @@ class Resolver {
                 resolveExpression(expression);
 
             case Variable(name):
-                if (!scopes.isEmpty() && scopes.peek().get(name.lexeme) == false) {
-                    Lox.errorToken(name, "Can't read local variable in its own initializer");
+                if (!scopes.isEmpty()) {
+                    var scopeVar = scopes.peek().get(name.lexeme);
+
+                    if (scopeVar != null && scopeVar.defined == false) {
+                        Lox.errorToken(name, "Can't read local variable in its own initializer");
+                    }
+
+                    
                 }
-                resolveLocal(expression, name);
+                resolveLocal(expression, name, true);
 
             case Assignment(name, value):
                 resolveExpression(value);
@@ -128,7 +134,14 @@ class Resolver {
     }
 
     private function endScope() {
-        scopes.pop();
+        var scope = scopes.pop();
+
+        // Chapter 11 Challenge 3
+        for (name => scopeVar in scope) {
+            if (!scopeVar.used) {
+                Lox.errorToken(scopeVar.token, 'Variable $name was not used');
+            }
+        }
     }
 
     private function declare(name:Token) {
@@ -139,17 +152,30 @@ class Resolver {
             Lox.errorToken(name, "Already a variable with this name in this scope");
         }
 
-        scope.set(name.lexeme, false);
+        scope.set(name.lexeme, {
+            token: name,
+            defined: false,
+            used: false
+        });
     }
 
     private function define(name:Token) {
         if (scopes.isEmpty()) return;
-        scopes.peek().set(name.lexeme, true);
+        scopes.peek().set(name.lexeme, {
+            token: name,
+            defined: true,
+            used: false
+        });
     }
 
-    private function resolveLocal(expression:Expression, name:Token) {
+    private function resolveLocal(expression:Expression, name:Token, use:Bool = false) {
         for (i => scope in scopes) {
             if (scope.exists(name.lexeme)) {
+                if (use) {
+                    var scopeVar = scope.get(name.lexeme);
+                    scopeVar.used = true;
+                }
+
                 interpreter.resolve(expression, scopes.length - 1 - i);
                 return;
             }
@@ -157,7 +183,7 @@ class Resolver {
     }
 }
 
-typedef ScopesT = Array<Map<String, Bool>>;
+typedef ScopesT = Array<Map<String, { token:Token, defined:Bool, used:Bool }>>;
 
 @:forward(push, pop, length)
 abstract Scopes(ScopesT) from ScopesT {
@@ -172,7 +198,7 @@ abstract Scopes(ScopesT) from ScopesT {
         return this.length <= 0;
     }
 
-    public inline function keyValueIterator():KeyValueIterator<Int, Map<String, Bool>> {
+    public inline function keyValueIterator():KeyValueIterator<Int, Map<String, { defined:Bool, used:Bool }>> {
         var i = this.length - 1;
 
         return {
