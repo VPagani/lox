@@ -2,10 +2,12 @@ package lox;
 
 class Class implements Callable {
     public final name:String;
+    public final superclass:Null<Class>;
     private final methods:Map<String, Function> = new Map();
 
-    public function new(name:String, methods:Map<String, Function>) {
+    public function new(name:String, ?superclass: Class, methods:Map<String, Function>) {
         this.name = name;
+        this.superclass = superclass;
         this.methods = methods;
     }
 
@@ -28,6 +30,10 @@ class Class implements Callable {
     public function findMethod(name:String) {
         if (methods.exists(name)) {
             return methods.get(name);
+        }
+
+        if (superclass != null) {
+            return superclass.findMethod(name);
         }
 
         return null;

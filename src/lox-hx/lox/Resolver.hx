@@ -45,12 +45,35 @@ class Resolver {
 
                 resolveFunction(params, body, FunctionType.FUNCTION);
 
-            case Class(name, methods):
+            case Class(name, superclass, methods):
                 var enclosingClass = currentClass;
                 currentClass = ClassType.CLASS;
 
                 declare(name);
                 define(name);
+
+                if (superclass != null) {
+                    var token = null;
+                    switch (superclass) {
+                        case Variable(supername):
+                            token = supername;
+                            if (name.lexeme == supername.lexeme) {
+                                Lox.errorToken(supername, "A class can't inherit from itself");
+                            }
+                        
+                        case _:
+                    }
+
+                    currentClass = ClassType.SUBCLASS;
+                    resolveExpression(superclass);
+
+                    var scope = beginScope();
+                    scope.set("super", {
+                        token: token,
+                        defined: true,
+                        used: true
+                    });
+                }
 
                 var scope = beginScope();
 
@@ -71,9 +94,10 @@ class Resolver {
                     }
                 }
 
-                currentClass = enclosingClass;
-
                 endScope();
+                if (superclass != null) endScope();
+
+                currentClass = enclosingClass;
 
             case If(condition, thenBranch, elseBranch):
                 resolveExpression(condition);
@@ -128,6 +152,17 @@ class Resolver {
             case This(keyword):
                 if (currentClass == ClassType.NONE) {
                     Lox.errorToken(keyword, "Can't use 'this' outside of a class");
+                }
+
+                resolveLocal(expression, keyword, true);
+
+            case Super(keyword, method):
+                switch (currentClass) {
+                    case NONE:
+                        Lox.errorToken(keyword, "Can't user 'super' outside of a class");
+                    case CLASS:
+                        Lox.errorToken(keyword, "Can't user 'super' in a class with no superclass");
+                    case _:
                 }
 
                 resolveLocal(expression, keyword, true);
@@ -281,4 +316,5 @@ enum FunctionType {
 enum ClassType {
     NONE;
     CLASS;
+    SUBCLASS;
 }

@@ -105,10 +105,17 @@ class Parser {
     }
 
     /**
-     * __classDeclaration__ -> _IDENTIFIER_ `{` __funDeclaration__* `}`
+     * __classDeclaration__ -> _IDENTIFIER_ ( `<` _IDENTIFIER_ )? `{` __funDeclaration__* `}`
      */
     private function classDeclaration():Statement {
         var name = consume(IDENTIFIER, "Expected class name");
+
+        var superclass = null;
+        if (match(LESS)) {
+            consume(IDENTIFIER, "Expected superclass name");
+            superclass = Expression.Variable(previous());
+        }
+
         consume(LEFT_BRACE, "Expect '{' before class body");
 
         var methods = [];
@@ -119,7 +126,7 @@ class Parser {
 
         consume(RIGHT_BRACE, "Expected '}' after class body");
 
-        return Statement.Class(name, methods);
+        return Statement.Class(name, superclass, methods);
     }
 
     /**
@@ -539,25 +546,34 @@ class Parser {
     }
 
     /**
-     * __primary__ → _NUMBER_
-     * 
-     * __primary__ → _STRING_
-     * 
-     * __primary__ → _IDENTIFIER_
-     * 
      * __primary__ → `true` | `false`
      * 
      * __primary__ → `nil`
      * 
+     * __primary__ → _NUMBER_ | _STRING_
+     * 
+     * __primary__ → `super` `.` _IDENTIFIER_
+     * 
+     * __primary__ → `this`
+     * 
+     * __primary__ → _IDENTIFIER_
+     * 
      * __primary__ → `(` __expression__ `)`
      */
      private function primary():Expression {
-        if (match(FALSE)) return Literal(false);
         if (match(TRUE)) return Literal(true);
+        if (match(FALSE)) return Literal(false);
         if (match(NIL)) return Literal(null);
 
         if (match(NUMBER, STRING)) {
             return Literal(previous().literal);
+        }
+
+        if (match(SUPER)) {
+            var keyword = previous();
+            consume(DOT, "Expected '.' after 'super'");
+            var method = consume(IDENTIFIER, "Expected superclass method name");
+            return Expression.Super(keyword, method);
         }
 
         if (match(THIS)) {

@@ -5,7 +5,7 @@ import lox.Interpreter.RuntimeError;
 var undefined = {};
 
 class Environment {
-    final enclosing:Null<Environment>;
+    public final enclosing:Null<Environment>;
     private final values:Map<String, Null<Dynamic>> = [];
 
     public function new(?enclosing:Environment) {

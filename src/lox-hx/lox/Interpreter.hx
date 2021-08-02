@@ -64,8 +64,26 @@ class Interpreter {
                 var func = new Function(name, params, body, environment);
                 environment.define(name.lexeme, func);
 
-            case Class(name, methods):
+            case Class(name, superclassExpression, methods):
+                var superclass = null;
+                if (superclassExpression != null) {
+                    switch (superclassExpression) {
+                        case Variable(name):
+                            superclass = evaluate(superclassExpression);
+                            if (!Std.isOfType(superclass, Class)) {
+                                throw new RuntimeError(name, "Superclass must be a class");
+                            }
+                        
+                        case _:
+                    }
+                }
+
                 environment.define(name.lexeme, null);
+
+                if (superclass != null) {
+                    environment = new Environment(environment);
+                    environment.define("super", superclass);
+                }
 
                 var methods_ = new Map();
                 for (method in methods) {
@@ -79,7 +97,11 @@ class Interpreter {
                     }
                 }
 
-                var klass = new Class(name.lexeme, methods_);
+                if (superclass != null) {
+                    environment = environment.enclosing;
+                }
+
+                var klass = new Class(name.lexeme, cast(superclass, Null<Class>), methods_);
                 environment.assign(name, klass);
 
             case If(condition, thenBranch, elseBranch):
@@ -168,6 +190,18 @@ class Interpreter {
 
             case This(keyword):
                 lookUpVariable(keyword, expr);
+
+            case Super(keyword, methodToken):
+                var distance = locals.get(expr);
+                var superclass = cast(environment.getAt(distance, "super"), Class);
+                var instance = cast(environment.getAt(distance - 1, "this"), Instance);
+                var method = superclass.findMethod(methodToken.lexeme);
+
+                if (method == null) {
+                    throw new RuntimeError(methodToken, 'Undefined property ${methodToken.lexeme}');
+                }
+
+                return method.bind(instance);
 
             case Unary(op, right):
                 var right = evaluate(right);

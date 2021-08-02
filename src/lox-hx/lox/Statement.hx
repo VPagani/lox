@@ -6,7 +6,7 @@ enum Statement {
     Block(statements:Array<Statement>);
     VarDecl(name:Token, ?initializer:Expression);
     Function(name:Token, params:Array<Token>, body:Array<Statement>);
-    Class(name:Token, methods:Array<Statement>);
+    Class(name:Token, ?superclass:Expression, methods:Array<Statement>);
     If(condition:Expression, thenBranch:Statement, ?elseBranch:Statement);
     While(condition:Expression, body:Statement);
     Break(keyword:Token);

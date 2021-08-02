@@ -6,6 +6,7 @@ enum Expression {
     Set(object:Expression, name:Token, value:Expression);
     Call(callee:Expression, paren:Token, arguments:Array<Expression>);
     This(keyword:Token);
+    Super(keyword:Token, method:Token);
     Unary(op:Token, right:Expression);
     Binary(left:Expression, op:Token, right:Expression);
     Logical(left:Expression, op:Token, right:Expression);
@@ -67,6 +68,8 @@ class AstPrinter {
                 parenthesize('${print(callee)}()', ...arguments);
 
             case This(keyword): 'this';
+
+            case Super(keyword, method): 'super.${method.lexeme}';
             
             case Unary(op, right):
                 parenthesize(op.lexeme, right);
@@ -112,6 +115,8 @@ class RpnPrinter {
                 stack('${print(callee)}())', ...arguments);
             
             case This(keyword): 'this';
+
+            case Super(keyword, method): 'super.${method.lexeme}';
 
             case Unary(op, right):
                 stack(op.lexeme, right);
