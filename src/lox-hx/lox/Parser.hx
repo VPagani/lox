@@ -43,12 +43,15 @@ class Parser {
      * 
      * __declaration__ → `fun` __funDeclaration__
      * 
+     * __declaration__ → `class` __classDeclaration__
+     * 
      * __declaration__ → __statement__
      */
     private function declaration(canBreak:Bool = false):Null<Statement> {
         try {
             if (match(VAR)) return varDeclaration();
             if (match(FUN)) return funDeclaration(function_);
+            if (match(CLASS)) return classDeclaration();
 
             return statement(canBreak);
         } catch (error:ParseError) {
@@ -99,6 +102,24 @@ class Parser {
         consume(LEFT_BRACE, 'Expect \'{\' before $kind body');
         var body = block();
         return Statement.Function(name, params, body);
+    }
+
+    /**
+     * __classDeclaration__ -> _IDENTIFIER_ `{` __funDeclaration__* `}`
+     */
+    private function classDeclaration():Statement {
+        var name = consume(IDENTIFIER, "Expected class name");
+        consume(LEFT_BRACE, "Expect '{' before class body");
+
+        var methods = [];
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            methods.push(funDeclaration(FunctionKind.method));
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' after class body");
+
+        return Statement.Class(name, methods);
     }
 
     /**
@@ -289,7 +310,7 @@ class Parser {
     /**
      * __assignment__ → __ternary__
      * 
-     * __assignment__ → _IDENTIFIER_ `=` __assignment__
+     * __assignment__ → ( __call__ "." )? _IDENTIFIER_ `=` __assignment__
      */
     private function assignment():Expression {
         var expr = ternary();
@@ -301,6 +322,9 @@ class Parser {
             switch (expr) {
                 case Variable(name):
                     return Assignment(name, value);
+
+                case Get(object, name):
+                    return Expression.Set(object, name, value);
                 
                 case _:
                     error(equals, "Invalid assignment target");
@@ -469,19 +493,22 @@ class Parser {
     }
 
     /**
-     * __call__ → __primary__ ( `(` __arguments__? `)` )*
+     * __call__ → __primary__ ( `(` __arguments__? `)` | `.` _IDENTIFIER_ )*
      */
     private function call() {
         var expr = primary();
     
         while (true) { 
-          if (match(LEFT_PAREN)) {
-            var args = arguments();
-            var paren = consume(RIGHT_PAREN, "Expected ')' after arguments");
-            expr = Call(expr, paren, args);
-          } else {
-            break;
-          }
+            if (match(LEFT_PAREN)) {
+                var args = arguments();
+                var paren = consume(RIGHT_PAREN, "Expected ')' after arguments");
+                expr = Call(expr, paren, args);
+            } else if (match(DOT)) {
+                var name = consume(IDENTIFIER, "Expected property name after '.'");
+                expr = Get(expr, name);
+            } else {
+                break;
+            }
         }
     
         return expr;
@@ -533,6 +560,10 @@ class Parser {
             return Literal(previous().literal);
         }
 
+        if (match(THIS)) {
+            return This(previous());
+        }
+
         if (match(IDENTIFIER)) {
             return Variable(previous());
         }
@@ -542,8 +573,8 @@ class Parser {
             consume(RIGHT_PAREN, "Expected ')' after expression");
             return Grouping(expr);
         }
-
-        throw error(peek(), "Expected expression");
+        var current = peek();
+        throw error(current, 'Invalid identifier \'${current.lexeme}\'');
     }
 
     private function match(...types:TokenType) {
@@ -610,4 +641,5 @@ class ParseError extends haxe.Exception {}
 
 enum abstract FunctionKind(String) {
     var function_ = "function";
+    var method;
 }

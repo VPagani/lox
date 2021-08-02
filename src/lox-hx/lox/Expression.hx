@@ -2,7 +2,10 @@ package lox;
 
 enum Expression {
     Literal(?value:Dynamic);
+    Get(object:Expression, name:Token);
+    Set(object:Expression, name:Token, value:Expression);
     Call(callee:Expression, paren:Token, arguments:Array<Expression>);
+    This(keyword:Token);
     Unary(op:Token, right:Expression);
     Binary(left:Expression, op:Token, right:Expression);
     Logical(left:Expression, op:Token, right:Expression);
@@ -54,8 +57,16 @@ class AstPrinter {
             case Literal(value):
                 (value == null) ? "nil" : Std.string(value);
 
+            case Get(object, name):
+                '${print(object)}.${name.lexeme}';
+
+            case Set(object, name, value):
+                '(= ${print(object)}.${name.lexeme} ${print(value)})';
+
             case Call(callee, paren, arguments):
-                parenthesize('[${print(callee)}]', ...arguments);
+                parenthesize('${print(callee)}()', ...arguments);
+
+            case This(keyword): 'this';
             
             case Unary(op, right):
                 parenthesize(op.lexeme, right);
@@ -91,9 +102,17 @@ class RpnPrinter {
             case Literal(value):
                 (value == null) ? "nil" : Std.string(value);
 
+            case Get(object, name):
+                '${print(object)}.${name.lexeme}';
+
+            case Set(object, name, value):
+                '${print(value)} ${print(object)}.${name.lexeme} =';
+
             case Call(callee, paren, arguments):
-                stack('(${print(callee)})', ...arguments);
+                stack('${print(callee)}())', ...arguments);
             
+            case This(keyword): 'this';
+
             case Unary(op, right):
                 stack(op.lexeme, right);
 

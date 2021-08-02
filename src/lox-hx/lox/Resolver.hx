@@ -1,9 +1,13 @@
 package lox;
 
+
 class Resolver {
     private final interpreter:Interpreter;
     private final scopes:Scopes = new Scopes();
-    private var context = Context.NONE;
+
+    private var currentLoop:LoopType = LoopType.NONE;
+    private var currentClass:ClassType = ClassType.NONE;
+    private var currentFunction:FunctionType = FunctionType.NONE;
 
     public function new(interpreter:Interpreter) {
         this.interpreter = interpreter;
@@ -39,7 +43,37 @@ class Resolver {
                 declare(name);
                 define(name);
 
-                resolveFunction(params, body, Context.FUNCTION);
+                resolveFunction(params, body, FunctionType.FUNCTION);
+
+            case Class(name, methods):
+                var enclosingClass = currentClass;
+                currentClass = ClassType.CLASS;
+
+                declare(name);
+                define(name);
+
+                var scope = beginScope();
+
+                scope.set("this", {
+                    token: name,
+                    defined: true,
+                    used: true
+                });
+
+                for (method in methods) {
+                    switch (method) {
+                        case Function(name, params, body):
+                            var declaration = name.lexeme == "init"
+                                ? FunctionType.INITIALIZER
+                                : FunctionType.METHOD;
+                            resolveFunction(params, body, declaration);
+                        case _:
+                    }
+                }
+
+                currentClass = enclosingClass;
+
+                endScope();
 
             case If(condition, thenBranch, elseBranch):
                 resolveExpression(condition);
@@ -49,26 +83,28 @@ class Resolver {
 
             case While(condition, body):
                 resolveExpression(condition);
-
-                var enclosingContext = context;
-                context = Context.LOOP;
-
+                var enclosingLoop = currentLoop;
+                currentLoop = LoopType.WHILE;
                 resolveStatement(body);
-
-                context = enclosingContext;
+                currentLoop = enclosingLoop;
             
             case Break(keyword):
-                if (context != Context.LOOP) {
+                if (currentLoop != LoopType.WHILE) {
                     Lox.errorToken(keyword, "Can only break inside a loop");
                 }
 
             case Return(keyword, expression):
-                if (context != Context.FUNCTION) {
-                    Lox.errorToken(keyword, "Can't return from top-level code.");
+                if (currentFunction == FunctionType.NONE) {
+                    Lox.errorToken(keyword, "Can't return from top-level code");
                 }
 
-                if (expression != null)
+                if (expression != null) {
+                    if (currentFunction == FunctionType.INITIALIZER) {
+                        Lox.errorToken(keyword, "Can't return a value from an initializer");
+                    }
+
                     resolveExpression(expression);
+                }
         }
     }
 
@@ -76,11 +112,25 @@ class Resolver {
         switch (expression) {
             case Literal(_):
 
+            case Get(object, name):
+                resolveExpression(object);
+
+            case Set(object, name, value):
+                resolveExpression(object);
+                resolveExpression(value);
+
             case Call(callee, _, arguments):
                 resolveExpression(callee);
 
                 for (argument in arguments)
                     resolveExpression(argument);
+            
+            case This(keyword):
+                if (currentClass == ClassType.NONE) {
+                    Lox.errorToken(keyword, "Can't use 'this' outside of a class");
+                }
+
+                resolveLocal(expression, keyword, true);
 
             case Unary(_, right):
                 resolveExpression(right);
@@ -115,22 +165,28 @@ class Resolver {
         }
     }
 
-    private function resolveFunction(params:Array<Token>, body:Array<Statement>, context:Context) {
-        var enclosingContext = context;
-
+    private function resolveFunction(params:Array<Token>, body:Array<Statement>, type:FunctionType) {
         beginScope();
         for (param in params) {
             declare(param);
             define(param);
         }
-        resolve(body);
-        endScope();
 
-        context = enclosingContext;
+        var enclosingLoop = currentLoop;
+        var enclosingFunction = currentFunction;
+        currentLoop = LoopType.NONE;
+        currentFunction = type;
+        resolve(body);
+        currentLoop = enclosingLoop;
+        currentFunction = enclosingFunction;
+
+        endScope();
     }
 
     private function beginScope() {
-        scopes.push(new Map());
+        var scope = new Map();
+        scopes.push(scope);
+        return scope;
     }
 
     private function endScope() {
@@ -142,6 +198,8 @@ class Resolver {
                 Lox.errorToken(scopeVar.token, 'Variable $name was not used');
             }
         }
+
+        return scope;
     }
 
     private function declare(name:Token) {
@@ -208,8 +266,19 @@ abstract Scopes(ScopesT) from ScopesT {
     }
 }
 
-enum Context {
+enum LoopType {
     NONE;
-    LOOP;
+    WHILE;
+}
+
+enum FunctionType {
+    NONE;
     FUNCTION;
+    INITIALIZER;
+    METHOD;
+}
+
+enum ClassType {
+    NONE;
+    CLASS;
 }

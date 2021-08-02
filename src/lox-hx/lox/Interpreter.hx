@@ -19,6 +19,8 @@ class Interpreter {
             }
         } catch (error:RuntimeError) {
             Lox.runtimeError(error);
+        } catch (e) {
+            Lox.error(0, e.stack.toString());
         }
     }
 
@@ -61,6 +63,24 @@ class Interpreter {
             case Function(name, params, body):
                 var func = new Function(name, params, body, environment);
                 environment.define(name.lexeme, func);
+
+            case Class(name, methods):
+                environment.define(name.lexeme, null);
+
+                var methods_ = new Map();
+                for (method in methods) {
+                    switch (method) {
+                        case Function(name, params, body):
+                            var isInit = name.lexeme == "init";
+                            var func = new Function(name, params, body, environment, isInit);
+                            methods_.set(name.lexeme, func);
+
+                        case _:
+                    }
+                }
+
+                var klass = new Class(name.lexeme, methods_);
+                environment.assign(name, klass);
 
             case If(condition, thenBranch, elseBranch):
                 if (isTruthy(evaluate(condition))) {
@@ -113,6 +133,25 @@ class Interpreter {
         return switch (expr) {
             case Literal(value): value;
 
+            case Get(object, name):
+                var object = evaluate(object);
+                if (Std.isOfType(object, Instance)) {
+                    return cast(object, Instance).get(name);
+                }
+
+                throw new RuntimeError(name, "Only instances have properties");
+
+            case Set(object, name, value):
+                var object = evaluate(object);
+
+                if (!Std.isOfType(object, Instance)) {
+                    throw new RuntimeError(name, "Only instances have fields");
+                }
+
+                var value = evaluate(value);
+                cast(object, Instance).set(name, value);
+                return value;
+
             case Call(callee, paren, arguments):
                 var callee = evaluate(callee);
                 var func = cast(callee, Callable);
@@ -122,10 +161,13 @@ class Interpreter {
                 }
 
                 if (!Std.isOfType(callee, Callable)) {
-                    throw new RuntimeError(paren, "Can only call functions and classes.");
+                    throw new RuntimeError(paren, "Can only call functions and classes");
                 }
 
                 return func.call(this, arguments.map(evaluate));
+
+            case This(keyword):
+                lookUpVariable(keyword, expr);
 
             case Unary(op, right):
                 var right = evaluate(right);
