@@ -1,5 +1,5 @@
 # Name of the project
-BIN=./bin/lox
+BIN=./bin/lox.exe
 
 # .c files
 C_SOURCE=$(wildcard ./src/lox-c/**.c)
@@ -28,6 +28,5 @@ run:
 
 clean:
 	@ rm $(BIN)
-
 
 .PHONY: all clean run
