@@ -18,8 +18,8 @@ CC_FLAGS=-c -W -Wall -ansi -pedantic
 
 all: build run
 
-$(BIN): $(C_SOURCE)
-	@ $(CC) -o $@ $^
+$(BIN): $(C_SOURCE) $(H_SOURCE)
+	@ $(CC) -o $(BIN) $(C_SOURCE)
 
 build: $(BIN)
 
