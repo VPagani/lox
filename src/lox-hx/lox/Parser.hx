@@ -178,7 +178,7 @@ class Parser {
      * __forStatement__ → `(` ( `;` | `var` __varDeclaration__ | __expressionStatement__ ) __expression__? `;` __expression__? `)` __statement__
      */
     private function forStatement():Statement {
-        consume(LEFT_PAREN, "Expected '(' after 'if'");
+        consume(LEFT_PAREN, "Expected '(' after 'for'");
         
         var initializer;
         if (match(SEMICOLON)) {

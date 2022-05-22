@@ -55,9 +55,18 @@ class Environment {
         return environment;
     }
 
-    public function getAt(distance:Int, name:String)
+    public function getAt(distance:Int, name:String) {
         return ancestor(distance).values.get(name);
+    }
 
     public function assignAt(distance:Int, name:Token, value:Dynamic)
         ancestor(distance).values.set(name.lexeme, value);
+
+    public function toString() {
+        if (enclosing != null) {
+            return 'Environment{${values.toString()}, ${enclosing.toString()}}';
+        } else {
+            return 'Environment{${values.toString()}}';
+        }
+    }
 }
