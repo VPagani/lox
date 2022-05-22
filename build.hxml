@@ -1,5 +1,9 @@
---class-path src/lox-hx
---main Lox
 --dce full
 -D analyzer-optimize
---neko bin/lox.n
+-D hl-ver=1.12.0
+
+--class-path src/lox-hx
+--main Lox
+
+
+--hl bin/lox.hl
