@@ -80,18 +80,47 @@ static void skipWhitespace() {
             case '\t':
                 advance();
                 break;
+
             case '\n':
                 scanner.line++;
                 advance();
                 break;
-            case '/':
-                if (peekNext() == '/') {
-                    // A comment goes until the end of the line
-                    while (peek() != '\n' && !isAtEnd()) advance();
-                } else {
-                    return;
+
+            case '/': {
+                char cNext = peekNext();
+                switch (cNext) {
+                    // inline comment
+                    case '/': {
+                        advance();
+                        advance();
+
+                        // A comment goes until the end of the line
+                        while (peek() != '\n' && !isAtEnd()) {
+                            advance();
+                        }
+                        break;
+                    }
+
+                    // block comment
+                    case '*': {
+                        advance();
+                        advance();
+
+                        while (peek() != '*' && peekNext() != '/' && !isAtEnd()) {
+                            advance();
+                        }
+
+                        advance();
+                        advance();
+
+                        break;
+                    }
+
+                    default:
+                        return;
                 }
                 break;
+            }
             default:
                 return;
         }
