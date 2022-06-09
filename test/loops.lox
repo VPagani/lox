@@ -39,10 +39,11 @@ print "";
 print "while with break";
 
 var i = 0;
-while (true) {
-    print i;
+var ended = false;
+while (!ended) {
     i = i + 1;
-    if (i == 10) break;
+    print i;
+    if (i == 10) ended = true;
 }
 
 
@@ -50,10 +51,8 @@ print "";
 print "for with break";
 
 var i = 0;
-for (;;) {
-    print i;
+for (var ended = false;!ended;) {
     i = i + 1;
-    if (i == 10) {
-        break;
-    }
+    print i;
+    if (i == 10) ended = true;
 }

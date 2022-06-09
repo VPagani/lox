@@ -106,12 +106,18 @@ static void skipWhitespace() {
                         advance();
                         advance();
 
-                        while (peek() != '*' && peekNext() != '/' && !isAtEnd()) {
+                        while (peek() != '*' || peekNext() != '/' && !isAtEnd()) {
+                            if (peek() == '\n') {
+                                scanner.line++;
+                            }
+
                             advance();
                         }
 
-                        advance();
-                        advance();
+                        if (!isAtEnd()) {
+                            advance();
+                            advance();
+                        }
 
                         break;
                     }
