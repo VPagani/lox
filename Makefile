@@ -11,7 +11,7 @@ H_SOURCE=$(wildcard ./src/lox-c/**.h)
 OBJ=$(C_SOURCE:.c=.o)
 
 # Compiler
-CC=zig cc
+CC=gcc
 
 # Compiler flags
 CC_FLAGS=-c -W -Wall -ansi -pedantic
