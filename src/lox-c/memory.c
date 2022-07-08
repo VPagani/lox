@@ -38,6 +38,9 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
     return result;
 }
 
+/**
+ * Marks an object ands its members to not be sweeped by the garbage collector
+ */
 void markObject(Obj* object) {
     if (object == NULL) return;
     if (object->isMarked) return;
@@ -60,12 +63,18 @@ void markObject(Obj* object) {
     vm.grayStack[vm.grayCount++] = object;
 }
 
+/**
+ * Marks an array and its elements to not be sweeped by the garbage collector
+ */
 static void markArray(ValueArray* array) {
     for (int i = 0; i < array->count; i++) {
         markValue(array->values[i]);
     }
 }
 
+/**
+ * Marks value to not be sweeped by the garbage collector
+ */
 void markValue(Value value) {
     if (IS_OBJ(value)) markObject(AS_OBJ(value));
 }
@@ -78,6 +87,12 @@ static void blackenObject(Obj* object) {
 #endif
 
     switch (object->type) {
+        case OBJ_CLASS: {
+            ObjClass* klass = (ObjClass*)object;
+            markObject((Obj*)klass->name);
+            break;
+        }
+
         case OBJ_CLOSURE: {
             ObjClosure* closure = (ObjClosure*)closure;
             markObject((Obj*)closure->function);
@@ -93,6 +108,13 @@ static void blackenObject(Obj* object) {
             ObjFunction* function = (ObjFunction*)object;
             markObject((Obj*)function->name);
             markArray(&function->chunk.constants);
+            break;
+        }
+
+        case OBJ_INSTANCE: {
+            ObjInstance* instance = (ObjInstance*)object;
+            markObject((Obj*)instance->klass);
+            markTable(&instance->fields);
             break;
         }
 
@@ -131,6 +153,11 @@ static void freeObject(Obj* object) {
 #endif
 
     switch (object->type) {
+        case OBJ_CLASS: {
+            FREE(ObjClass, object);
+            break;
+        }
+
         case OBJ_CLOSURE: {
             FREE(ObjClosure, object);
             break;
@@ -140,6 +167,13 @@ static void freeObject(Obj* object) {
             ObjFunction* function = (ObjFunction*)object;
             freeChunk(&function->chunk);
             FREE(ObjFunction, object);
+            break;
+        }
+
+        case OBJ_INSTANCE: {
+            ObjInstance* instance = (ObjInstance*)object;
+            freeTable(&instance->fields);
+            FREE(ObjInstance, object);
             break;
         }
 
