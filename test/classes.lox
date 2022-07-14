@@ -48,3 +48,19 @@ class Cake {
 var cake = Cake();
 cake.flavor = "German chocolate";
 cake.taste(); // Prints "The German chocolate cake is delicious!"
+
+class CoffeeMaker {
+  init(coffee) {
+    this.coffee = coffee;
+  }
+
+  brew() {
+    print "Enjoy your cup of " + this.coffee;
+
+    // No reusing the grounds!
+    this.coffee = nil;
+  }
+}
+
+var maker = CoffeeMaker("coffee and chicory");
+maker.brew(); // Prints "Enjoy your cup of coffee and chicory"
