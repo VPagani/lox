@@ -677,6 +677,18 @@ static void classDeclaration() {
     classCompiler.enclosing = currentClass;
     currentClass = &classCompiler;
 
+    if (match(TOKEN_LESS)) {
+        consume(TOKEN_IDENTIFIER, "Expected superclass name");
+        variable(false);
+
+        if (identifiersEqual(&className, &parser.previous)) {
+            error("A class can't inherit from itself");
+        }
+
+        namedVariable(className, false);
+        emitByte(OP_INHERIT);
+    }
+
     emitBytes(OP_CLASS, nameConstant);
     defineVariable(nameConstant);
 
