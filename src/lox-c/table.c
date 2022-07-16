@@ -20,7 +20,11 @@ void freeTable(Table* table) {
 }
 
 static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
-	uint32_t index = key->hash % capacity;
+	// Modulo Optimization
+	// The modulo of a number that is a power of two is equivalent
+	// to bitwise AND of that power of two minus one.
+	// Modulo operations are much more slow than bitwise for the cpu.
+	uint32_t index = key->hash & (capacity - 1);
 	Entry* tombstone = NULL;
 
 	for (;;) {
@@ -37,12 +41,9 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
 			// We found the key
 			return entry;
 		}
-
-		// if (entry->key == key || entry->key == NULL) {
-		// 	return entry;
-		// }
-
-		index = (index + 1) % capacity;
+		
+		// Modulo Optimization
+		index = (index + 1) & (capacity - 1);
 	}
 }
 
@@ -123,7 +124,8 @@ void tableAddAll(Table* from, Table* to) {
 ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash) {
 	if (table->count == 0) return NULL;
 
-	uint32_t index = hash % table->capacity;
+	// Modulo Optimization
+	uint32_t index = hash & (table->capacity - 1);
 
 	for (;;) {
 		Entry* entry = &table->entries[index];
@@ -139,7 +141,8 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
 			return entry->key;
 		}
 
-		index = (index + 1) % table->capacity;
+		// Modulo Optimization
+		index = (index + 1) & (table->capacity - 1);
 	}
 }
 
