@@ -138,6 +138,28 @@ static void printFunction(ObjFunction* function) {
     printf("<fn %s>", function->name->chars);
 }
 
+ObjString* stringifyObject(Value value) {
+    switch (OBJ_TYPE(value)) {
+        case OBJ_CLASS:
+            return takeString("<class>", 7);
+
+        case OBJ_CLOSURE:
+        case OBJ_FUNCTION:
+        case OBJ_BOUND_METHOD:
+        case OBJ_NATIVE:
+            return takeString("<function>", 11);
+        
+        case OBJ_INSTANCE:
+            return takeString("<object>", 9);
+
+        case OBJ_STRING:
+            return AS_STRING(value);
+
+        case OBJ_UPVALUE:
+            return takeString("<upvalue>", 10);
+    }
+}
+
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_CLASS:

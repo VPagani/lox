@@ -17,6 +17,9 @@ print a = 2; // Prints "2"
 a = 5;
 var b = 6;
 print a = a + b; // Prints "11"
+
+var b = " foo";
+print a = 4 + a + b; // "15 foo"
 ```
 
 ### Functions
